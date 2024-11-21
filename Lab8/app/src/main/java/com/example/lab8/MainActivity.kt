@@ -14,26 +14,22 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 
 class MainActivity : AppCompatActivity() {
-    // 宣告 MyAdapter 物件，使用 lateinit 關鍵字來延遲初始化
-    private lateinit var myAdapter: MyAdapter
+    // Use mutableListOf for dynamic list management
+    private val contacts = mutableListOf<Contact>()
+    private lateinit var contactAdapter: MyAdapter
 
-    // 宣告 contacts 陣列，表示聯絡人資料
-    private val contacts = ArrayList<Contact>()
-
-    // 宣告 ActivityResultLauncher。
-    // 內部負責處理 SecActivity 回傳結果
-    private val startForResult = registerForActivityResult(
+    // Simplified result launcher with more concise handling
+    private val addContactLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result: ActivityResult ->
         if (result.resultCode == Activity.RESULT_OK) {
-            // 取得回傳的 Intent，並從 Intent 中取得聯絡人資訊
-            val intent = result.data
-            val name = intent?.getStringExtra("name") ?: ""
-            val phone = intent?.getStringExtra("phone") ?: ""
-            // 新增聯絡人資料
-            contacts.add(Contact(name, phone))
-            // 更新列表
-            myAdapter.notifyDataSetChanged()
+            result.data?.let { intent ->
+                val name = intent.getStringExtra("name") ?: return@let
+                val phone = intent.getStringExtra("phone") ?: return@let
+
+                contacts.add(Contact(name, phone))
+                contactAdapter.notifyItemInserted(contacts.size - 1)
+            }
         }
     }
 
@@ -41,25 +37,29 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContentView(R.layout.activity_main)
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-            insets
+
+        // Use view binding or kotlin synthetics in a real project
+        val recyclerView: RecyclerView = findViewById(R.id.recyclerView)
+        val addButton: Button = findViewById(R.id.btnAdd)
+
+        // Use apply for more concise configuration
+        recyclerView.apply {
+            layoutManager = LinearLayoutManager(this@MainActivity)
+            contactAdapter = MyAdapter(contacts)
+            adapter = contactAdapter
         }
-        // 宣告元件變數並使用 findViewByID 方法取得元件
-        val recyclerView = findViewById<RecyclerView>(R.id.recyclerView)
-        val btnAdd = findViewById<Button>(R.id.btnAdd)
-        // 創建 LinearLayoutManager 物件，設定垂直排列
-        val linearLayoutManager = LinearLayoutManager(this)
-        linearLayoutManager.orientation = LinearLayoutManager.VERTICAL
-        recyclerView.layoutManager = linearLayoutManager
-        // 創建 MyAdapter 並連結 recyclerView
-        myAdapter = MyAdapter(contacts)
-        recyclerView.adapter = myAdapter
-        // 設定按鈕監聽器，使用 startForResult 前往 SecActivity
-        btnAdd.setOnClickListener {
-            val i = Intent(this, SecActivity::class.java)
-            startForResult.launch(i)
+
+        // Use lambda for click listener
+        addButton.setOnClickListener {
+            val intent = Intent(this, SecActivity::class.java)
+            addContactLauncher.launch(intent)
+        }
+
+        // Handle window insets
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { view, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            view.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+            insets
         }
     }
 }

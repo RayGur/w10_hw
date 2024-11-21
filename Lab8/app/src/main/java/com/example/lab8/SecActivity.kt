@@ -16,37 +16,41 @@ class SecActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContentView(R.layout.activity_sec)
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-            insets
-        }
-        // 宣告元件變數並使用 findViewByID 方法取得元件
-        val edName = findViewById<EditText>(R.id.edName)
-        val edPhone = findViewById<EditText>(R.id.edPhone)
-        val btnSend = findViewById<Button>(R.id.btnSend)
-        // 設定按鈕監聽器，取得輸入的姓名與電話
-        btnSend.setOnClickListener {
-            //判斷是否輸入資料
+
+        // Use view binding or kotlin synthetics in a real project
+        val nameEditText: EditText = findViewById(R.id.edName)
+        val phoneEditText: EditText = findViewById(R.id.edPhone)
+        val sendButton: Button = findViewById(R.id.btnSend)
+
+        // Use more concise validation and result handling
+        sendButton.setOnClickListener {
+            val name = nameEditText.text.toString()
+            val phone = phoneEditText.text.toString()
+
             when {
-                edName.text.isEmpty() -> showToast("請輸入姓名")
-
-                edPhone.text.isEmpty() -> showToast("請輸入電話")
-
+                name.isBlank() -> showToast("請輸入姓名")
+                phone.isBlank() -> showToast("請輸入電話")
                 else -> {
-                    val b = Bundle()
-                    b.putString("name", edName.text.toString())
-                    b.putString("phone", edPhone.text.toString())
-                    //使用setResult()回傳聯絡人資料
-                    setResult(Activity.RESULT_OK, Intent().putExtras(b))
+                    val resultIntent = Intent().apply {
+                        putExtra("name", name)
+                        putExtra("phone", phone)
+                    }
+                    setResult(Activity.RESULT_OK, resultIntent)
                     finish()
                 }
             }
         }
+
+        // Handle window insets
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { view, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            view.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+            insets
+        }
     }
 
-    // 建立 showToast 方法顯示 Toast 訊息
-    private fun showToast(msg: String) {
-        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
+    // Make showToast an extension function for more idiomatic code
+    private fun showToast(message: String) {
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
     }
 }
